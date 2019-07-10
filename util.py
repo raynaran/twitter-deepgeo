@@ -22,12 +22,12 @@ def datetime_to_float(datetime):
 
 def get_id_city_key(d):
     id_key, city_key = None, None
-    for k in id_city_key.keys():
+    for k in list(id_city_key.keys()):
         if k in d:
             id_key = id_city_key[k][0]
             city_key = id_city_key[k][1]
     if id_key == None or city_key == None:
-        print "Unable to find tweet ID and city key; json =", d
+        print("Unable to find tweet ID and city key; json =", d)
         raise SystemExit
 
     return id_key, city_key
@@ -109,7 +109,7 @@ def get_vocab(data, attr_name, granularity, minfreq):
         elif granularity == "word":
             wordfreq[d[attr_name]] += 1
 
-    for w, f in sorted(wordfreq.items(), key=operator.itemgetter(1), reverse=True):
+    for w, f in sorted(list(wordfreq.items()), key=operator.itemgetter(1), reverse=True):
         if f >= minfreq:
             if (w != unk_token) and (w != pad_token):
                 dic[w] = len(dic_rev)

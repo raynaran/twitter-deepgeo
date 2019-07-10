@@ -50,7 +50,7 @@ else:
 #functions#
 ###########
 def get_key(x):
-    for k in x.keys():
+    for k in list(x.keys()):
         if not k.startswith("__"):
             return k
 
@@ -59,7 +59,7 @@ def get_key(x):
 ######
 
 #load the data
-print "Loading train and test data..."
+print("Loading train and test data...")
 train_label = np.load(open(os.path.join(args.input_dir, train_label_fname)))
 test_label = np.load(open(os.path.join(args.input_dir, test_label_fname)))
 
@@ -76,11 +76,11 @@ else:
     key = get_key(data)
     test_hash = np.array(data[key], dtype=bool)
 
-print "Number train instances =", train_hash.shape[0]
-print "Number test instances =", test_hash.shape[0]
+print("Number train instances =", train_hash.shape[0])
+print("Number test instances =", test_hash.shape[0])
 
 #filter away test instances that have less than N train neighbours
-print "\nFiltering away test instances that have less than %d neighbours in train..." % min_n
+print("\nFiltering away test instances that have less than %d neighbours in train..." % min_n)
 label_count = defaultdict(int)
 test_hash_f, test_label_f = [], []
 for l in train_label:
@@ -92,17 +92,17 @@ for li, l in enumerate(test_label):
 test_hash_f = np.array(test_hash_f)
 test_label_f = np.array(test_label_f)
 
-print "Number of filtered test instances =", test_hash_f.shape[0]
+print("Number of filtered test instances =", test_hash_f.shape[0])
 
 #compute hamming distance for all pairs between train and test instances
-print "\nComputing hamming distance..."
+print("\nComputing hamming distance...")
 if distance == "hamming":
     h = cdist(test_hash_f, train_hash, "hamming")
 else:
     h = cdist(test_hash_f, train_hash, "cosine")
 
 #compute mean average precision
-print "\nComputing mean average precision..."
+print("\nComputing mean average precision...")
 avps = []
 hidden_size = test_hash_f.shape[1]
 for y in range(h.shape[0]):
@@ -111,25 +111,25 @@ for y in range(h.shape[0]):
     num_neighbours = label_count[y_label]
     avp, true_positive = 0.0, 0
     if debug:
-        print "\ntest instance =", y
+        print("\ntest instance =", y)
         #print "test instance hash =", np.array(test_hash_f[y], dtype=int)
-        print "test instance label =", y_label
-        print "number of neighbours in train =", num_neighbours
+        print("test instance label =", y_label)
+        print("number of neighbours in train =", num_neighbours)
     for xi, x in enumerate(xs):
         if debug:
-            print "\n\t", xi, "train instance =", x
+            print("\n\t", xi, "train instance =", x)
             #print "\t\ttrain instance hash =", np.array(train_hash[x], dtype=int)
-            print "\t\ttrain instance label =", train_label[x]
-            print "\t\thamming distance =", hamming(train_hash[x], test_hash_f[y])
+            print("\t\ttrain instance label =", train_label[x])
+            print("\t\thamming distance =", hamming(train_hash[x], test_hash_f[y]))
         if y_label == train_label[x]:
             true_positive += 1
             avp += float(true_positive) / (xi+1)
             if debug:
-                print "\t\t\tHIT!", true_positive, avp
+                print("\t\t\tHIT!", true_positive, avp)
 
     avp = avp / label_count[y_label]
     avps.append(avp)
     if debug:
-        print "\n\taverage precision =", avps[-1]
+        print("\n\taverage precision =", avps[-1])
 
-print "Mean average precision =", np.mean(avps) #, np.std(avps), np.median(avps), np.max(avps), np.min(avps)
+print("Mean average precision =", np.mean(avps)) #, np.std(avps), np.median(avps), np.max(avps), np.min(avps)

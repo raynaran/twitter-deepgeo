@@ -1,0 +1,5 @@
+.idea/*
+models/*
+output/*
+*.txt
+__pycache__/*

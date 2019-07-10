@@ -49,18 +49,19 @@ save_model=True
 
 ###input/output###
 output_dir="output"
-train_data="data/train_data/training.json.all"
-train_label="data/train_label/training.json.all"
+# train_data="data/train_data/training.json.all"
+# train_label="data/train_label/training.json.all"
 #for a quick test of the code, you can train on "valid" data and test on "valid" data, e.g.
-#train_data="data/valid/data.tweet.json"
-#train_label="data/valid/label.tweet.json"
+train_data="data/valid/data.tweet.json"
+train_label="data/valid/label.tweet.json"
 valid_data="data/valid/data.tweet.json"
 valid_label="data/valid/label.tweet.json"
-output_prefix="wmin%d_smin%d_bucket%s_batch%d_epoch%d_kp%.1f_seed%d_lr%.4f_h%d_cl%.3f_a%.3f_text%d-%d-%d_time%d_day%d_offset%d_tz%d_loc%d-%d-%d-%d_desc%d-%d-%d-%d_name%d-%d-%d-%d_utime%d" % \
-    (word_minfreq, seq_minlen, ("-".join([str(item) for item in bucket_sizes])), batch_size, epoch_size, \
-    keep_prob, seed, learning_rate, rep_hidden_size, corruption_level, alpha, \
-    text_emb_size, text_filter_number, text_pool_window, \
-    time_size, day_size, offset_size, timezone_size, \
-    loc_maxlen, loc_emb_size, loc_filter_width, loc_filter_number, \
-    desc_maxlen, desc_emb_size, desc_filter_width, desc_filter_number, \
-    name_maxlen, name_emb_size, name_filter_width, name_filter_number, usertime_size)
+output_prefix="test"
+# output_prefix="wmin%d_smin%d_bucket%s_batch%d_epoch%d_kp%.1f_seed%d_lr%.4f_h%d_cl%.3f_a%.3f_text%d-%d-%d_time%d_day%d_offset%d_tz%d_loc%d-%d-%d-%d_desc%d-%d-%d-%d_name%d-%d-%d-%d_utime%d" % \
+#     (word_minfreq, seq_minlen, ("-".join([str(item) for item in bucket_sizes])), batch_size, epoch_size,
+#     keep_prob, seed, learning_rate, rep_hidden_size, corruption_level, alpha,
+#     text_emb_size, text_filter_number, text_pool_window,
+#     time_size, day_size, offset_size, timezone_size,
+#     loc_maxlen, loc_emb_size, loc_filter_width, loc_filter_number,
+#     desc_maxlen, desc_emb_size, desc_filter_width, desc_filter_number,
+#     name_maxlen, name_emb_size, name_filter_width, name_filter_number, usertime_size)

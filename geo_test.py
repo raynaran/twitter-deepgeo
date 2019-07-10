@@ -11,7 +11,7 @@ import codecs
 import random
 import operator
 import os
-import cPickle
+import pickle
 import math
 import scipy.io as sio
 import time as tm
@@ -60,12 +60,12 @@ def run_epoch(data, label, classes_rev, models, cf):
     start_time = tm.time()
     costs, accs = 0.0, []
     num_batches = int(math.ceil(float(len(data))/cf.batch_size))
-    batch_ids = range(num_batches)
+    batch_ids = list(range(num_batches))
 
     #create text length to bucket id map
     lenxbucket, prev_b = {}, -1
     for bi, b in enumerate(cf.bucket_sizes):
-        for i in xrange(prev_b+1, b+1):
+        for i in range(prev_b+1, b+1):
             lenxbucket[i] = (bi, b)
         prev_b = b
 
@@ -108,13 +108,13 @@ def run_epoch(data, label, classes_rev, models, cf):
 
                 if inst_id < len(data):
                     text = data[inst_id]["text"]
-                    print "\nInstance ID     =", inst_id
-                    print "Text            =", text
-                    print "True Label      =", label[data[inst_id]["id_str"]]
-                    print "Predicted Label =", classes_rev[pred[j]]
+                    print("\nInstance ID     =", inst_id)
+                    print("Text            =", text)
+                    print("True Label      =", label[data[inst_id]["id_str"]])
+                    print("Predicted Label =", classes_rev[pred[j]])
                     for k in range(20):
-                        print "\t%.5f : [%3d] %s" % \
-                            (attn[j][pos[j][k]], pos[j][k], text[pos[j][k]:pos[j][k]+cf.text_pool_window])
+                        print("\t%.5f : [%3d] %s" % \
+                            (attn[j][pos[j][k]], pos[j][k], text[pos[j][k]:pos[j][k]+cf.text_pool_window]))
                 else:
                     break
         else:
@@ -132,22 +132,22 @@ def run_epoch(data, label, classes_rev, models, cf):
     #print time, offset and user time distribution 
     if args.print_time:
         top_n = 10
-        cc = sorted(class_count.items(), key=operator.itemgetter(1), reverse=True)[:top_n]
+        cc = sorted(list(class_count.items()), key=operator.itemgetter(1), reverse=True)[:top_n]
         if cf.time_size > 0:
             time_mu, time_sigma = get_mu_sigma(models[0], "time")
         if cf.offset_size > 0:
             offset_mu, offset_sigma = get_mu_sigma(models[0], "offset")
         if cf.usertime_size > 0:
             usertime_mu, usertime_sigma = get_mu_sigma(models[0], "usertime")
-        print "\nTime, offset and usertime distribution for top-N Cities:"
+        print("\nTime, offset and usertime distribution for top-N Cities:")
         for k, v in cc:
-            print "\n", v, ":", classes_rev[k]
+            print("\n", v, ":", classes_rev[k])
             if cf.time_size > 0:
                 time_ids = np.argsort(time_dist[0][k])[::-1]
-                print "\tTime distributions"
+                print("\tTime distributions")
                 for t in time_ids[:top_n]:
-                    print "\t\t%.2f = %02d:%02d" % (time_dist[0][k][t]/v, \
-                        int((time_mu[t]*1440)/60), int((time_mu[t]*1440)%60))
+                    print("\t\t%.2f = %02d:%02d" % (time_dist[0][k][t]/v, \
+                        int((time_mu[t]*1440)/60), int((time_mu[t]*1440)%60)))
 
                 x = np.linspace(-0.0, 1.0, 10000)
                 time_sigma = np.absolute(time_sigma)
@@ -169,15 +169,15 @@ def run_epoch(data, label, classes_rev, models, cf):
 
             if cf.offset_size > 0:
                 offset_ids = np.argsort(time_dist[1][k])[::-1]
-                print "\tOffset distributions"
+                print("\tOffset distributions")
                 for t in offset_ids[:top_n]:
-                    print "\t\t%.2f = %.2f" % (time_dist[1][k][t]/v, (offset_mu[t]*26.0)-12.0)
+                    print("\t\t%.2f = %.2f" % (time_dist[1][k][t]/v, (offset_mu[t]*26.0)-12.0))
             if cf.usertime_size > 0:
                 usertime_ids = np.argsort(time_dist[2][k])[::-1]
-                print "\tUser time distributions"
+                print("\tUser time distributions")
                 for t in usertime_ids[:top_n]:
-                    print "\t\t%.2f = %02d:%02d" % (time_dist[2][k][t]/v, \
-                        int((usertime_mu[t]*1440)/60), int((usertime_mu[t]*1440)%60))
+                    print("\t\t%.2f = %02d:%02d" % (time_dist[2][k][t]/v, \
+                        int((usertime_mu[t]*1440)/60), int((usertime_mu[t]*1440)%60)))
             
             
 
@@ -187,18 +187,22 @@ def run_epoch(data, label, classes_rev, models, cf):
 ######
 #main#
 ######
-sys.stdout = codecs.getwriter('utf-8')(sys.stdout)
+sys.stdout = codecs.getwriter('utf-8')(sys.stdout.detach())
 
 #load the vocabulary
-vocabxid, tzxid, locxid, descxid, namexid, classes = cPickle.load(open(os.path.join(args.model_dir, "feature_ids.pickle")))
-classes_rev = [ item[0] for item in sorted(classes.items(), key=operator.itemgetter(1)) ]
+with open(os.path.join(args.model_dir, "feature_ids.pickle"), 'rb') as feature_ids_file:
+    vocabxid, tzxid, locxid, descxid, namexid, classes = pickle.load(feature_ids_file)
+
+classes_rev = [ item[0] for item in sorted(list(classes.items()), key=operator.itemgetter(1)) ]
 
 #load config
-cf_dict = cPickle.load(open(os.path.join(args.model_dir, "config.pickle")))
+with open(os.path.join(args.model_dir, "config.pickle"), 'rb') as config_file:
+    cf_dict = pickle.load(config_file)
+
 if "text_pool_stride" in cf_dict: #fix for older models
     cf_dict["text_pool_window"] = cf_dict["text_pool_stride"]
     del cf_dict["text_pool_stride"]
-ModelConfig = namedtuple("ModelConfig", " ".join(cf_dict.keys()))
+ModelConfig = namedtuple("ModelConfig", " ".join(list(cf_dict.keys())))
 cf = ModelConfig(**cf_dict)
 
 #set the seeds
@@ -206,25 +210,25 @@ random.seed(cf.seed)
 np.random.seed(cf.seed)
 
 #load raw test data and labels
-print "Loading test labels..."
+print("Loading test labels...")
 test_label = load_label(args.input_label, cf)
-print "Loading test data..."
+print("Loading test data...")
 test_data = load_data(args.input_doc, test_label, False, cf)
 
 #clean text data
-print "Converting text to ids..."
-test_len_x, test_miss_y, test_len_loc, test_len_desc, test_len_name = clean_data(test_data, test_label, \
+print("Converting text to ids...")
+test_len_x, test_miss_y, test_len_loc, test_len_desc, test_len_name = clean_data(test_data, test_label,
     vocabxid, tzxid, locxid, descxid, namexid, classes, cf)
 
-print "\nStatistics:"
-print "Number of test instances =", len(test_data)
-print ("Test:\n\tmean/max text len = %.2f/%d;" + \
-    "\n\tmean/max location len = %.2f/%d;" + \
-    "\n\tmean/max description len = %.2f/%d;" + \
-    "\n\tmean/max name len = %.2f/%d;" + \
-    "\n\tno. instances with missing classes = %d") % \
-    (np.mean(test_len_x), max(test_len_x), np.mean(test_len_loc), max(test_len_loc), \
-    np.mean(test_len_desc), max(test_len_desc), np.mean(test_len_name), max(test_len_name), test_miss_y)
+print("\nStatistics:")
+print("Number of test instances =", len(test_data))
+print(("Test:\n\tmean/max text len = %.2f/%d;" +
+    "\n\tmean/max location len = %.2f/%d;" +
+    "\n\tmean/max description len = %.2f/%d;" +
+    "\n\tmean/max name len = %.2f/%d;" +
+    "\n\tno. instances with missing classes = %d") %
+    (np.mean(test_len_x), max(test_len_x), np.mean(test_len_loc), max(test_len_loc),
+    np.mean(test_len_desc), max(test_len_desc), np.mean(test_len_name), max(test_len_name), test_miss_y))
 
 #initialise and load model parameters
 with tf.Graph().as_default(), tf.Session() as sess:
@@ -232,14 +236,14 @@ with tf.Graph().as_default(), tf.Session() as sess:
     initializer = tf.contrib.layers.xavier_initializer(seed=cf.seed)
     mtests = []
     with tf.variable_scope("model", reuse=None, initializer=initializer):
-        mtests.append(TGP(is_training=False, vocab_size=len(vocabxid), num_steps=cf.bucket_sizes[0], \
-            num_classes=len(classes), num_timezones=len(tzxid), loc_vsize=len(locxid), \
+        mtests.append(TGP(is_training=False, vocab_size=len(vocabxid), num_steps=cf.bucket_sizes[0],
+            num_classes=len(classes), num_timezones=len(tzxid), loc_vsize=len(locxid),
             desc_vsize=len(descxid), name_vsize=len(namexid), config=cf))
     with tf.variable_scope("model", reuse=True, initializer=initializer):
         if len(cf.bucket_sizes) > 1:
             for b in cf.bucket_sizes[1:]:
-                mtests.append(TGP(is_training=False, vocab_size=len(vocabxid), num_steps=b, \
-                    num_classes=len(classes), num_timezones=len(tzxid), loc_vsize=len(locxid), \
+                mtests.append(TGP(is_training=False, vocab_size=len(vocabxid), num_steps=b,
+                    num_classes=len(classes), num_timezones=len(tzxid), loc_vsize=len(locxid),
                     desc_vsize=len(descxid), name_vsize=len(namexid),  config=cf))
 
 
@@ -251,7 +255,7 @@ with tf.Graph().as_default(), tf.Session() as sess:
     if args.predict or args.save_rep or args.save_label or args.print_attn or args.save_mat or args.print_time:
         reps, acc, labels = run_epoch(test_data, test_label, classes_rev, mtests, cf)
         if args.predict:
-            print "\nTest accuracy =", acc
+            print("\nTest accuracy =", acc)
         if args.save_rep:
             x = reps.reshape((-1, cf.rep_hidden_size))>0
             #x = reps.reshape((-1, cf.rep_hidden_size))

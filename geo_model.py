@@ -45,36 +45,38 @@ class TGP(object):
 
         #embedding lookup
         inputs = tf.nn.embedding_lookup(emb, x)
-        inputs_rev = tf.reverse(inputs, [False, True, False])
+        inputs_rev = tf.reverse(inputs, [1])
+        # inputs_rev = tf.reverse(inputs, [False, True, False])
 
         #transform sent input from [batch_size,sent_len,hidden_size] to [sent_len,batch_size,hidden_size]
-        inputs_s = [tf.squeeze(input_, [1]) for input_ in tf.split(1, maxlen, inputs)]
-        inputs_rev_s = [tf.squeeze(input_, [1]) for input_ in tf.split(1, maxlen, inputs_rev)]
+        inputs_s = [tf.squeeze(input_, [1]) for input_ in tf.split(inputs, maxlen, 1)]
+        inputs_rev_s = [tf.squeeze(input_, [1]) for input_ in tf.split(inputs_rev, maxlen, 1)]
 
         #run lstm and get hidden states
         with tf.variable_scope("lstm-forward"):
             lstm_fw = tf.nn.rnn_cell.BasicLSTMCell(esize, forget_bias=1.0)
-            fw_outputs, _ = tf.nn.rnn(lstm_fw, inputs_s, \
+            fw_outputs, _ = tf.nn.static_rnn(cell=lstm_fw, inputs=inputs_s,
                 initial_state=lstm_fw.zero_state(config.batch_size, tf.float32))
             #insert zero state at the front and drop the last state [h_A, h_B, h_C] -> [0, h_A, h_B]
             fw_outputs.insert(0, zero_state)
             fw_outputs = fw_outputs[:-1]
         with tf.variable_scope("lstm-backward"):
             lstm_bw = tf.nn.rnn_cell.BasicLSTMCell(esize, forget_bias=1.0)
-            bw_outputs, _ = tf.nn.rnn(lstm_bw, inputs_rev_s, \
+            bw_outputs, _ = tf.nn.static_rnn(cell=lstm_bw, inputs=inputs_rev_s,
                 initial_state=lstm_bw.zero_state(config.batch_size, tf.float32))
             #reverse the time steps [j_C, j_B, j_A] -> [j_A, j_B, j_C]
-            bw_outputs = tf.unpack(tf.reverse(tf.pack(bw_outputs), [True, False, False]))
+            bw_outputs = tf.unstack(tf.reverse(tf.stack(bw_outputs), [0]))
+            # bw_outputs = tf.unpack(tf.reverse(tf.pack(bw_outputs), [True, False, False]))
             #insert zero state at the end and drop the first state [j_A, j_B, j_C] -> [j_B, j_C, 0]
             bw_outputs.append(zero_state)
             bw_outputs = bw_outputs[1:]
 
         #reshape outputs from [sent_len,batch_size,hidden_size] to [batch_size,sent_len,hidden_size]
-        fw_outputs = tf.reshape(tf.concat(1, fw_outputs), [config.batch_size,-1,esize])
-        bw_outputs = tf.reshape(tf.concat(1, bw_outputs), [config.batch_size,-1,esize])
+        fw_outputs = tf.reshape(tf.concat(axis=1, values=fw_outputs), [config.batch_size,-1,esize])
+        bw_outputs = tf.reshape(tf.concat(axis=1, values=bw_outputs), [config.batch_size,-1,esize])
 
         #concatenate the left right context and word embeddings [batch_size, sent_len, hidden_size*3]
-        lrw_concat = tf.concat(2, [fw_outputs, inputs, bw_outputs])
+        lrw_concat = tf.concat(axis=2, values=[fw_outputs, inputs, bw_outputs])
         #reshape into [batch_size, sent_len*3, hidden_size, 1]
         lrw_concat = tf.reshape(lrw_concat, [config.batch_size, -1, esize, 1])
 
@@ -98,7 +100,7 @@ class TGP(object):
 
     def rbf_layer(self, x, psize):
         #variables
-        mu_init = np.array(range(psize), dtype=np.float32) / psize 
+        mu_init = np.array(list(range(psize)), dtype=np.float32) / psize 
         mu = tf.get_variable("mu", [psize], initializer=tf.constant_initializer(mu_init))
         sigma = tf.get_variable("sigma", [psize], initializer=tf.constant_initializer(np.sqrt(0.5/psize)))
 
@@ -222,7 +224,7 @@ class TGP(object):
         self.dense_b = tf.get_variable("dense_b", [config.rep_hidden_size], initializer=tf.constant_initializer())
 
         #concatenate all features
-        hidden = tf.concat(1, hiddens)
+        hidden = tf.concat(axis=1, values=hiddens)
 
         #add gaussian noise
         hidden = hidden + self.noise
@@ -243,7 +245,7 @@ class TGP(object):
 
         #compute crossent and loss
         logits = tf.matmul(self.rep, self.softmax_w) + self.softmax_b
-        crossent = tf.nn.sparse_softmax_cross_entropy_with_logits(logits, self.y)
+        crossent = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits, labels=self.y)
         self.cost = tf.reduce_sum(crossent) / config.batch_size
         self.probs = tf.nn.softmax(logits)
 
