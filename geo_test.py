@@ -25,6 +25,9 @@ from functools import partial
 from geo_model import TGP
 from util import *
 
+# to suppress 'tried to deallocate nullptr' warnings
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+
 #parser arguments
 desc = "Given trained model, perform various test inferences"
 parser = argparse.ArgumentParser(description=desc)

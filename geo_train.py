@@ -16,8 +16,12 @@ import pickle
 import time as tm
 import tensorflow as tf
 import numpy as np
+import datetime
 from geo_model import TGP
 from util import *
+
+# to suppress 'tried to deallocate nullptr' warnings
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 #parser arguments
 desc = "Given train/valid json tweets, train neural network to predict tweet locations"
@@ -37,6 +41,10 @@ if args.config:
 else:
     print("Loading config from default directory")
     import config as cf
+
+#generate output model prefix name
+cf.output_prefix = f"test_model_{datetime.datetime.now().strftime('%Y_%m_%d_%H_%M_%S')}"
+
 
 ###########
 #functions#

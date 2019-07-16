@@ -22,7 +22,7 @@ time_size=50
 #day feature
 day_size=0
 #utc offset feature
-offset_size=50
+offset_size=0
 #timezone feature
 timezone_size=50
 #location feature
@@ -52,11 +52,11 @@ output_dir="output"
 # train_data="data/train_data/training.json.all"
 # train_label="data/train_label/training.json.all"
 #for a quick test of the code, you can train on "valid" data and test on "valid" data, e.g.
-train_data="data/valid/data.tweet.json"
-train_label="data/valid/label.tweet.json"
+train_data="data/valid_from_downloader/data.json"
+train_label="data/valid_from_downloader/label.json"
 valid_data="data/valid/data.tweet.json"
 valid_label="data/valid/label.tweet.json"
-output_prefix="test"
+output_prefix="default"
 # output_prefix="wmin%d_smin%d_bucket%s_batch%d_epoch%d_kp%.1f_seed%d_lr%.4f_h%d_cl%.3f_a%.3f_text%d-%d-%d_time%d_day%d_offset%d_tz%d_loc%d-%d-%d-%d_desc%d-%d-%d-%d_name%d-%d-%d-%d_utime%d" % \
 #     (word_minfreq, seq_minlen, ("-".join([str(item) for item in bucket_sizes])), batch_size, epoch_size,
 #     keep_prob, seed, learning_rate, rep_hidden_size, corruption_level, alpha,
